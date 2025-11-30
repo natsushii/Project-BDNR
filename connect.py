@@ -1,6 +1,3 @@
-"""
-Conexiones para las 3 bases de datos
-"""
 
 from pymongo import MongoClient
 from cassandra.cluster import Cluster
@@ -75,12 +72,9 @@ def close_all_connections():
     
     if _dgraph_client:
         _dgraph_client = None
-    
-    print("🔒 Todas las conexiones cerradas")
-
 
 def test_connections():
-    print("\nCONEXIONES:")
+    print("\nCONNECTIONS:")
     
     results = {}
     
@@ -88,22 +82,22 @@ def test_connections():
     try:
         db = get_mongo_db()
         db.list_collection_names()
-        print("MongoDB conectado\n")
+        print("MongoDB connected\n")
         results['MongoDB'] = True
 
     except Exception as e:
-        print(f"MongoDB falló: {e}\n")
+        print(f"MongoDB failed: {e}\n")
         results['MongoDB'] = False
     
     # Cassandra
     try:
         session = get_cassandra_session()
         session.execute("SELECT now() FROM system.local")
-        print("Cassandra conectado\n")
+        print("Cassandra connected\n")
         results['Cassandra'] = True
 
     except Exception as e:
-        print(f"Cassandra falló: {e}\n")
+        print(f"Cassandra filed: {e}\n")
         results['Cassandra'] = False
     
     # Dgraph
@@ -113,11 +107,11 @@ def test_connections():
         txn = client.txn(read_only=True)
         txn.query(query)
         txn.discard()
-        print("Dgraph conectado\n")
+        print("Dgraph connected\n")
         results['Dgraph'] = True
 
     except Exception as e:
-        print(f"Dgraph falló: {e}\n")
+        print(f"Dgraph failed: {e}\n")
         results['Dgraph'] = False
     
     return all(results.values())
@@ -127,6 +121,6 @@ def test_connections():
 
 if __name__ == "__main__":
     if test_connections():
-        print("Todas las bases de datos conectadas!\n")
+        print("All databases al connected!\n")
     else:
         print("Fallo\n")
