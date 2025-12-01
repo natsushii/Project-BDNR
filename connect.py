@@ -123,4 +123,4 @@ if __name__ == "__main__":
     if test_connections():
         print("All databases al connected!\n")
     else:
-        print("Fallo\n")
+        print("Failed\n")

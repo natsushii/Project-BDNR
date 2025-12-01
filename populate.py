@@ -20,7 +20,7 @@ def generate_fake_data():
             "personal_info": {
                 "first_name": fake.first_name(),
                 "last_name": fake.last_name(),
-                "birth_date": fake.date_of_birth(minimum_age=18, maximum_age=60),
+                "birth_date": datetime.combine(fake.date_of_birth(minimum_age=18, maximum_age=60),datetime.min.time()),
                 "pronouns": random.choice(["he/him", "she/her", "they/them"]),
                 "location": fake.city() + ", Jalisco"
             },
@@ -98,12 +98,11 @@ def generate_fake_data():
         friend_ids = random.sample([uid for uid in range(num_users) if uid != user_id], 
                                    k=min(num_best_friends, num_users - 1))
         
-        for position, friend_id in enumerate(friend_ids, start=1):
+        for friend_id in friend_ids:
             bf = {
                 "user_id": user_id,
                 "friend_id": friend_id,
                 "added_at": fake.date_time_between(start_date='-6m', end_date='now'),
-                "position": position
             }
             best_friends.append(bf)
     
@@ -149,7 +148,7 @@ def generate_fake_data():
     }
 
 def populate_mongodb(data):
-    db = get_mongo_db
+    db = get_mongo_db()
     print("Llenando Mongo ...")
 
     #eliminamos datos anteriores para evitar confusiones
@@ -200,7 +199,7 @@ def populate_mongodb(data):
     if best_friends_for_mongo:
         db.best_friends.insert_many(best_friends_for_mongo)
     
-    #insertar savedpost
+    #insertar saved_post
     saved_posts_for_mongo = []
     for saved in data['saved_posts']:
         saved_copy = saved.copy()
@@ -222,15 +221,79 @@ def populate_mongodb(data):
     if search_history_for_mongo:
         db.search_history.insert_many(search_history_for_mongo)
     
-#def populate_cassandra():
+    #Creamos index
+    try:
+        db.users.create_index([("username", 1)], unique=True, name="username_unique")
+        db.users.create_index([("email", 1)], unique=True, name="email_unique")
+        db.users.create_index([("personal_info.location", 1)], name="location_search")
 
+    # Indexes Post
+        db.posts.create_index([("hashtags", 1)], name="hashtags_search")
+        db.posts.create_index([("is_viral", 1)], name="is_viral_filter")
+        db.posts.create_index([("location", 1)], name="location_filter")
+        db.posts.create_index([("likes_count", 1)], name="likes_count_sort")
+
+    # Indexes User_relationships
+        db.user_relationships.create_index([("following_id", 1)], name="following_lookup")
+        db.user_relationships.create_index([("follower_id", 1)], name="follower_lookup")
+        db.user_relationships.create_index(
+            [("follower_id", 1), ("following_id", 1)], 
+            unique=True, 
+            name="unique_relationship"
+        )
+
+    # Indexes Best_friends
+        db.best_friends.create_index(
+            [("user_id", 1), ("friend_id", 1)],
+            name="search_friend"
+        )
+        db.best_friends.create_index(
+            [("user_id", 1), ("friend_id", 1)],
+            unique=True,
+            name="unique_friendship"
+        )
+
+    # Indexes Saved_posts
+        db.saved_posts.create_index(
+            [("user_id", 1), ("saved_at", -1)],
+            name="show_saved"
+        )
+        db.saved_posts.create_index(
+            [("user_id", 1), ("post_id", 1)],
+            unique=True,
+            name="unique_saved_post"
+        )
+
+    # Indexes search_history
+        db.search_history.create_index(
+            [("user_id", 1), ("searched_at", -1)],
+            name="show_recent"
+        )
+        db.search_history.create_index(
+            [("searched_at", 1)],
+            expireAfterSeconds=7776000,
+            name="delete_after_90_days"
+        )    
+        print ("Indexes created correctly")
+
+    except Exception as e:
+        print("Indexes creation failes\n")
+
+    return user_id_map, post_id_map
+
+#def populate_cassandra():
 
 #def populate_dgraph():
     
-
 def main():
-    populate_mongodb()
-    populate_cassandra()
-    populate_dgraph()
+
+    data = generate_fake_data()
+
+    populate_mongodb(data)
+    #populate_cassandra()
+   #populate_dgraph()
 
     print("Datos completos en todas las bases de datos")
+
+if __name__=="__main__":
+    main()
