@@ -18,6 +18,8 @@ def convert_objectid_to_str(doc):
         for key, value in doc.items():
             if isinstance(value, ObjectId):
                 doc[key] = str(value)
+            elif isinstance(value, datetime):
+                doc[key] = value.isoformat()
             elif isinstance(value, dict):
                 doc[key] = convert_objectid_to_str(value)
             elif isinstance(value, list):

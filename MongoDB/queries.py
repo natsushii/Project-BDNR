@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 def get_user_by_id(db,user_id):
     return db.users.find_one({'_id': ObjectId(user_id)})
 
-def get_users_by_username(db,username):
+def get_user_by_username(db,username):
     return db.users.find_one({'username': username})
 
 def get_users_by_location (db, location, limit=20):
