@@ -2,6 +2,7 @@ from connect import get_mongo_db, get_cassandra_session, get_dgraph_client
 from faker import Faker
 from datetime import datetime, timedelta
 import random
+import pydgraph
 
 fake = Faker('es_MX')
 
@@ -284,6 +285,120 @@ def populate_mongodb(data):
 #def populate_cassandra():
 
 #def populate_dgraph():
+def populate_dgraph():
+    client = get_dgraph_client()
+    print("Populating Dgraph.")
+    txn = client.txn()
+
+    try:
+        data = {
+            "set": [
+                {
+                    "uid": "_:nati",
+                    "dgraph.type": ["User"],
+                    "name": "Nati",
+                    "username": "nati",
+                    "follows": {"uid": "_:cacho"},
+                    "makes": {"uid": "_:post1"},
+                    "likes": {"uid": "_:post3"},
+                    "writes": {"uid": "_:comment1"}
+                },
+                {
+                    "uid": "_:cacho",
+                    "dgraph.type": ["User"],
+                    "name": "Cacho",
+                    "username": "cacho",
+                    "follows": {"uid": "_:ale"},
+                    "makes": {"uid": "_:post2"},
+                    "likes": {"uid": "_:post1"},
+                    "writes": {"uid": "_:comment2"}
+                },
+                {
+                    "uid": "_:ale",
+                    "dgraph.type": ["User"],
+                    "name": "Ale",
+                    "username": "ale",
+                    "follows": {"uid": "_:nati"},
+                    "makes": {"uid": "_:post3"},
+                    "likes": {"uid": "_:post2"},
+                    "writes": {"uid": "_:comment3"}
+                },
+
+                # POSTS
+                {
+                    "uid": "_:post1",
+                    "dgraph.type": ["Post"],
+                    "text": "Primer post de Nati en Studio404",
+                    "created_at": "2025-11-30T10:00:00Z",
+                    "has_hashtag": {"uid": "_:tagStageWave"},
+                    "has_comment": {"uid": "_:comment1"}
+                },
+                {
+                    "uid": "_:post2",
+                    "dgraph.type": ["Post"],
+                    "text": "Post de Cacho probando el grafo en Dgraph",
+                    "created_at": "2025-11-30T11:00:00Z",
+                    "has_hashtag": {"uid": "_:tagDgraph"},
+                    "has_comment": {"uid": "_:comment2"}
+                },
+                {
+                    "uid": "_:post3",
+                    "dgraph.type": ["Post"],
+                    "text": "Ale anuncia nueva feature para Studio404",
+                    "created_at": "2025-11-30T12:00:00Z",
+                    "has_hashtag": {"uid": "_:tagStudio404"},
+                    "has_comment": {"uid": "_:comment3"}
+                },
+
+                # COMMENTS
+                {
+                    "uid": "_:comment1",
+                    "dgraph.type": ["Comment"],
+                    "text": "Se ve increíble tu post, Nati",
+                    "created_at": "2025-11-30T10:15:00Z"
+                },
+                {
+                    "uid": "_:comment2",
+                    "dgraph.type": ["Comment"],
+                    "text": "Buen ejemplo para el laboratorio, Cacho",
+                    "created_at": "2025-11-30T11:20:00Z"
+                },
+                {
+                    "uid": "_:comment3",
+                    "dgraph.type": ["Comment"],
+                    "text": "Me encanta la nueva feature, Ale",
+                    "created_at": "2025-11-30T12:10:00Z"
+                },
+
+                # HASHTAGS
+                {
+                    "uid": "_:tagStageWave",
+                    "dgraph.type": ["Hashtag"],
+                    "tag": "#StageWave"
+                },
+                {
+                    "uid": "_:tagDgraph",
+                    "dgraph.type": ["Hashtag"],
+                    "tag": "#Dgraph"
+                },
+                {
+                    "uid": "_:tagStudio404",
+                    "dgraph.type": ["Hashtag"],
+                    "tag": "#Studio404"
+                }
+            ]
+        }
+
+        # con set_obj puedes pasar directamente la lista sin el wrapper "set"
+        txn.mutate(set_obj=data["set"])
+        txn.commit()
+        print("Dgraph llenado correctamente")
+
+    except Exception as e:
+        print("Error al llenar Dgraph:", e)
+    finally:
+        txn.discard()
+
     
 def main():
 
@@ -291,7 +406,7 @@ def main():
 
     populate_mongodb(data)
     #populate_cassandra()
-   #populate_dgraph()
+    populate_dgraph()
 
     print("Datos completos en todas las bases de datos")
 
