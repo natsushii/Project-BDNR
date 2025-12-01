@@ -23,3 +23,6 @@ python3 connect.py
 
 # run populate.py to add information to your database
 python3 populate.py
+
+# run main.py to activate the server
+
